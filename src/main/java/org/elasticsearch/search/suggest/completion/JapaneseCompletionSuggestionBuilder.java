@@ -3,7 +3,7 @@ package org.elasticsearch.search.suggest.completion;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.index.query.QueryShardContext;
+import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.search.suggest.SuggestionSearchContext;
 
 import java.io.IOException;
@@ -87,7 +87,7 @@ public class JapaneseCompletionSuggestionBuilder extends CompletionSuggestionBui
     }
 
     @Override
-    public SuggestionSearchContext.SuggestionContext build(QueryShardContext context) throws IOException {
+    public SuggestionSearchContext.SuggestionContext build(SearchExecutionContext context) throws IOException {
         CompletionSuggestionContext suggestionContext = (CompletionSuggestionContext) super.build(context);
         return new JapaneseCompletionSuggestionContext(suggestionContext, context);
     }
