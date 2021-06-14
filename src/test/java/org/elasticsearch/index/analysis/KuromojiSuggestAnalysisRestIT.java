@@ -14,10 +14,12 @@ public class KuromojiSuggestAnalysisRestIT extends ESClientYamlSuiteTestCase {
 
     public KuromojiSuggestAnalysisRestIT(@Name("yaml") ClientYamlTestCandidate testCandidate) {
         super(testCandidate);
+        
     }
 
     @ParametersFactory
-    public static Iterable<Object[]> parameters() throws IOException {
-        return ESClientYamlSuiteTestCase.createParameters();
+    public static Iterable<Object[]> parameters() throws Exception {
+        Iterable<Object[]> a =  ESClientYamlSuiteTestCase.createParameters();
+        return a;
     }
 }

@@ -11,7 +11,7 @@ public class KuromojiSuggestTokenizerFactory extends AbstractTokenizerFactory {
     private final boolean edgeNGram;
 
     public KuromojiSuggestTokenizerFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(indexSettings, name, settings);
+        super(indexSettings,settings,name);
 
         this.expand = settings.getAsBoolean("expand", false);
         this.maxExpansions = settings.getAsInt("max_expansions", 512);

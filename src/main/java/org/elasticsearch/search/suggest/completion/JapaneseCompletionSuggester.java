@@ -4,7 +4,9 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.BulkScorer;
 import org.apache.lucene.search.CollectionTerminatedException;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.Weight;
+import org.apache.lucene.search.TotalHits.Relation;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.document.CompletionQuery;
 import org.apache.lucene.search.suggest.document.TopSuggestDocs;
@@ -14,6 +16,9 @@ import org.apache.lucene.util.PriorityQueue;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.mapper.CompletionFieldMapper;
 import org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.search.suggest.Suggest.Suggestion;
+import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry;
+import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
 import org.elasticsearch.search.suggest.Suggester;
 
 import java.io.IOException;
@@ -52,7 +57,7 @@ public class JapaneseCompletionSuggester extends Suggester<JapaneseCompletionSug
         }
 
         final CompletionFieldMapper.CompletionFieldType fieldType = suggestionContext.getFieldType();
-        CompletionSuggestion completionSuggestion = new CompletionSuggestion(name, suggestionContext.getSize());
+        CompletionSuggestion completionSuggestion = new CompletionSuggestion(name, suggestionContext.getSize(),true);
         spare.copyUTF8Bytes(suggestionContext.getText());
         CompletionSuggestion.Entry completionSuggestEntry = new CompletionSuggestion.Entry(
                 new Text(spare.toString()), 0, spare.length());
@@ -68,7 +73,7 @@ public class JapaneseCompletionSuggester extends Suggester<JapaneseCompletionSug
             FilteredTopDocumentsCollector.SuggestDoc suggestDoc =
                     (FilteredTopDocumentsCollector.SuggestDoc) suggestScoreDoc;
             // collect contexts
-            Map<String, Set<CharSequence>> contexts = Collections.emptyMap();
+            Map<String, Set<String>> contexts = Collections.emptyMap();
             if (fieldType.hasContextMappings() && suggestDoc.getContexts().isEmpty() == false) {
                 contexts = fieldType.getContextMappings().getNamedContexts(suggestDoc.getContexts());
             }
@@ -96,7 +101,7 @@ public class JapaneseCompletionSuggester extends Suggester<JapaneseCompletionSug
 
     private static void suggest(IndexSearcher searcher, CompletionQuery query, TopSuggestDocsCollector collector) throws IOException {
         query = (CompletionQuery) query.rewrite(searcher.getIndexReader());
-        Weight weight = query.createWeight(searcher, collector.needsScores());
+        Weight weight = query.createWeight(searcher, collector.scoreMode(),1);
         for (LeafReaderContext context : searcher.getIndexReader().leaves()) {
             BulkScorer scorer = weight.bulkScorer(context);
             if (scorer != null) {
@@ -270,10 +275,20 @@ public class JapaneseCompletionSuggester extends Suggester<JapaneseCompletionSug
             updateResults(); // to empty the last set of collected suggest docs
             TopSuggestDocs.SuggestScoreDoc[] suggestScoreDocs = pq.getResults();
             if (suggestScoreDocs.length > 0) {
-                return new TopSuggestDocs(suggestScoreDocs.length, suggestScoreDocs, suggestScoreDocs[0].score);
+                return new TopSuggestDocs(new TotalHits(suggestScoreDocs.length,Relation.EQUAL_TO), suggestScoreDocs);
             } else {
                 return TopSuggestDocs.EMPTY;
             }
         }
+    }
+
+    @Override
+    protected Suggestion<? extends Entry<? extends Option>> emptySuggestion(String name,
+            JapaneseCompletionSuggestionContext suggestion, CharsRefBuilder spare) throws IOException {
+        CompletionSuggestion completionSuggestion = new CompletionSuggestion(name, suggestion.getSize(), true);
+        spare.copyUTF8Bytes(suggestion.getText());
+        CompletionSuggestion.Entry completionSuggestEntry = new CompletionSuggestion.Entry(new Text(spare.toString()), 0, spare.length());
+        completionSuggestion.addTerm(completionSuggestEntry);
+        return completionSuggestion;
     }
 }

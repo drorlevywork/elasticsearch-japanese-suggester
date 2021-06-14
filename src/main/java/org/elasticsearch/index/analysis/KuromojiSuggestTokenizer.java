@@ -9,6 +9,7 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute;
 
 import java.io.IOException;
+import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -64,6 +65,7 @@ public class KuromojiSuggestTokenizer extends Tokenizer {
         clearAttributes();
 
         Keystroke keystroke = this.keystrokes.next();
+        if (null == keystroke) return false;
         String stroke = keystroke.getKey();
         this.termAtt.append(stroke);
         this.offsetAtt.setOffset(0, stroke.length());
@@ -91,12 +93,23 @@ public class KuromojiSuggestTokenizer extends Tokenizer {
     @Override
     public void reset() throws IOException {
         super.reset();
+        java.io.PushbackReader b = new PushbackReader(this.input); // TODO: figure out while we need to peek like this and remove
+        this.input = b;
         this.kuromoji.setReader(this.input);
         this.kuromoji.reset();
+        boolean a= true;
+        int c =b.read();
+        if (c==0)
+        {
+            a=false;
+        }
+        else{
+            b.unread(c);
+        }
 
         StringBuilder readingBuilder = new StringBuilder();
         StringBuilder surfaceFormBuilder = new StringBuilder();
-        while (this.kuromoji.incrementToken()) {
+        while (a && this.kuromoji.incrementToken()) {
             String readingFragment = this.kuromoji.getAttribute(ReadingAttribute.class).getReading();
             String surfaceFormFragment = this.kuromoji.getAttribute(CharTermAttribute.class).toString();
 
@@ -116,7 +129,9 @@ public class KuromojiSuggestTokenizer extends Tokenizer {
             keyStrokes = KeystrokeUtil.toKeyStrokes(readingBuilder.toString(), this.maxExpansions);
         } else {
             keyStrokes = new ArrayList<>();
-            keyStrokes.add(KeystrokeUtil.toCanonicalKeystroke(readingBuilder.toString()));
+            Keystroke keystroke = KeystrokeUtil.toCanonicalKeystroke(readingBuilder.toString());
+            if (null!= keystroke)
+                keyStrokes.add(KeystrokeUtil.toCanonicalKeystroke(readingBuilder.toString()));
         }
 
         // Add original input as "keystroke"

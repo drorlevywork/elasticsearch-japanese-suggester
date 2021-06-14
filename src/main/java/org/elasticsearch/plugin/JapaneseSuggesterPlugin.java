@@ -12,6 +12,7 @@ import org.elasticsearch.plugins.AnalysisPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.SearchPlugin;
 import org.elasticsearch.search.suggest.completion.JapaneseCompletionSuggestionBuilder;
+import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,8 +41,14 @@ public class JapaneseSuggesterPlugin extends Plugin implements AnalysisPlugin, S
     }
 
     @Override
-    public List<SuggesterSpec<?>> getSuggesters() {
-        return singletonList(new SuggesterSpec<>(JapaneseCompletionSuggestionBuilder.SUGGESTION_NAME,
-                JapaneseCompletionSuggestionBuilder::new, JapaneseCompletionSuggestionBuilder::fromXContent));
+public List<SuggesterSpec<?>> getSuggesters() {
+    return singletonList(
+            new SearchPlugin.SuggesterSpec<>(
+                JapaneseCompletionSuggestionBuilder.SUGGESTION_NAME,
+                JapaneseCompletionSuggestionBuilder::new,
+                JapaneseCompletionSuggestionBuilder::fromXContent,
+                CompletionSuggestion::new
+            )
+        );
     }
 }

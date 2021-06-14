@@ -58,11 +58,6 @@ public class JapaneseCompletionSuggestionBuilder extends CompletionSuggestionBui
     }
 
     @Override
-    public JapaneseCompletionSuggestionBuilder contexts(Contexts2x contexts2x) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public JapaneseCompletionSuggestionBuilder analyzer(String analyzer) {
         super.analyzer(analyzer);
         return this;
